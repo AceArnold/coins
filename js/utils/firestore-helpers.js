@@ -47,9 +47,13 @@ export async function addClass(name, teacherIds) {
   return ref.id;
 }
 
+/** Admin only — replace the full teacherIds array on an existing class */
+export async function updateClassTeachers(classId, teacherIds) {
+  await updateDoc(doc(db, "classes", classId), { teacherIds });
+}
+
 // ---------- TEACHERS ----------
 
-/** Admin only — get every approved teacher (for dropdowns) */
 export async function getApprovedTeachers() {
   const q = query(
     collection(db, "users"),

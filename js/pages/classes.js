@@ -11,7 +11,8 @@ import {
   getStudentsInClass,
   addClass,
   addStudent,
-  getApprovedTeachers
+  getApprovedTeachers,
+  updateClassTeachers
 } from "../utils/firestore-helpers.js";
 
 const teacher = await requireAuth();
@@ -42,14 +43,23 @@ async function loadClasses() {
   );
 
   listEl.innerHTML = classesWithStats.map(cls => `
-    <a href="class.html?classId=${cls.id}" class="class-card">
-      <div class="class-card-name">${cls.name}</div>
-      <div class="class-card-meta">
-        <span>${cls.studentCount} student${cls.studentCount === 1 ? "" : "s"}</span>
-        <span class="text-star">${cls.average.toFixed(1)} ⭐ avg</span>
-      </div>
-    </a>
+    <div class="class-card-row">
+      <a href="class.html?classId=${cls.id}" class="class-card">
+        <div class="class-card-name">${cls.name}</div>
+        <div class="class-card-meta">
+          <span>${cls.studentCount} student${cls.studentCount === 1 ? "" : "s"}</span>
+          <span class="text-star">${cls.average.toFixed(1)} ⭐ avg</span>
+        </div>
+      </a>
+      ${isAdmin ? `<button class="btn btn-secondary btn-sm edit-teachers-btn" data-class-id="${cls.id}" data-class-name="${cls.name}">Edit Teachers</button>` : ""}
+    </div>
   `).join("");
+
+  if (isAdmin) {
+    listEl.querySelectorAll(".edit-teachers-btn").forEach(btn => {
+      btn.addEventListener("click", () => openEditTeachersModal(btn.dataset.classId, btn.dataset.className));
+    });
+  }
 }
 
 // ---------- Add Class modal (admin only) ----------
@@ -95,6 +105,43 @@ async function openAddClassModal() {
       if (teacherIds.length === 0) throw new Error("Please select at least one teacher.");
 
       await addClass(name, teacherIds);
+      await loadClasses();
+    }
+  });
+}
+
+// ---------- Edit Teachers modal (admin only) ----------
+
+async function openEditTeachersModal(classId, className) {
+  const [teachers, cls] = await Promise.all([
+    getApprovedTeachers(),
+    getAllClasses().then(classes => classes.find(c => c.id === classId))
+  ]);
+
+  const currentTeacherIds = cls ? cls.teacherIds || [] : [];
+
+  const checkboxes = teachers.map(t => `
+    <label style="display: flex; align-items: center; gap: var(--space-sm); margin-bottom: var(--space-sm);">
+      <input type="checkbox" value="${t.id}" class="teacher-checkbox" ${currentTeacherIds.includes(t.id) ? "checked" : ""} />
+      <span>${t.name || t.email}</span>
+    </label>
+  `).join("");
+
+  openModal({
+    title: `Edit Teachers — ${className}`,
+    confirmLabel: "Save Changes",
+    bodyHtml: `
+      <div>
+        ${checkboxes}
+      </div>
+    `,
+    onConfirm: async (body) => {
+      const checked = Array.from(body.querySelectorAll(".teacher-checkbox:checked"));
+      const teacherIds = checked.map(cb => cb.value);
+
+      if (teacherIds.length === 0) throw new Error("A class must have at least one teacher.");
+
+      await updateClassTeachers(classId, teacherIds);
       await loadClasses();
     }
   });

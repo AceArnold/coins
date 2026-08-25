@@ -50,3 +50,20 @@
 .admin-actions-row[hidden] {
   display: none;
 }
+
+.class-card-row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.class-card-row .class-card {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.class-card-row .edit-teachers-btn {
+  align-self: center;
+  white-space: nowrap;
+}
