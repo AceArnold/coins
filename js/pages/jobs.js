@@ -11,11 +11,12 @@ import {
   signUpForJob,
   completeJob,
   getJobApplications,
+  getPendingJobCompletions,
   getTeacherClasses,
   getStudentsInClass
 } from "../utils/firestore-helpers.js";
 import { validateJob } from "../utils/validators.js";
-import { formatStars } from "../utils/format.js";
+import { formatStars, formatDate } from "../utils/format.js";
 
 const teacher = await requireAuth();
 renderNav();
@@ -36,7 +37,7 @@ async function getAllTeacherStudents() {
   return allStudentsCache;
 }
 
-// ---------- Load & render jobs ----------
+// ---------- Load & render open jobs ----------
 
 async function loadJobs() {
   const jobs = await getJobs();
@@ -58,21 +59,12 @@ async function loadJobs() {
       </div>
       <div class="job-card-actions">
         <button class="btn btn-secondary btn-sm" data-signup-job-id="${job.id}" data-job-title="${job.title}">Sign Up Student</button>
-        <button class="btn btn-primary btn-sm" data-complete-job-id="${job.id}" data-job-title="${job.title}" data-job-stars="${job.stars}">Mark Complete</button>
       </div>
     </div>
   `).join("");
 
   gridEl.querySelectorAll("[data-signup-job-id]").forEach(btn => {
     btn.addEventListener("click", () => openSignUpModal(btn.dataset.signupJobId, btn.dataset.jobTitle));
-  });
-
-  gridEl.querySelectorAll("[data-complete-job-id]").forEach(btn => {
-    btn.addEventListener("click", () => openCompleteModal(
-      btn.dataset.completeJobId,
-      btn.dataset.jobTitle,
-      Number(btn.dataset.jobStars)
-    ));
   });
 }
 
@@ -146,53 +138,55 @@ async function openSignUpModal(jobId, jobTitle) {
 
       await signUpForJob(jobId, studentId);
       await loadJobs();
+      await loadPendingCompletions();
     }
   });
 }
 
-// ---------- Mark complete modal ----------
+// ---------- Pending Completions (mirrors store's fulfillment tracker) ----------
 
-async function openCompleteModal(jobId, jobTitle, jobStars) {
-  const applications = await getJobApplications(jobId);
-  const signedUp = applications.filter(a => a.status === "signed_up");
+async function loadPendingCompletions() {
+  const pending = await getPendingJobCompletions();
+  const listEl = document.getElementById("pending-completions-list");
 
-  if (signedUp.length === 0) {
-    openModal({
-      title: `Mark Complete — ${jobTitle}`,
-      confirmLabel: "Close",
-      bodyHtml: `<p class="empty-state">No students are signed up for this job yet.</p>`,
-      onConfirm: async () => {}
-    });
+  if (pending.length === 0) {
+    listEl.innerHTML = `<p class="empty-state">No jobs awaiting completion.</p>`;
     return;
   }
 
-  const students = await getAllTeacherStudents();
-  const options = signedUp.map(app => {
-    const student = students.find(s => s.id === app.studentId);
-    return `<option value="${app.id}" data-student-id="${app.studentId}">${student ? student.name : "Unknown"}</option>`;
-  }).join("");
+  listEl.innerHTML = pending.map(app => `
+    <div class="fulfillment-item">
+      <div class="fulfillment-info">
+        <div class="fulfillment-student">${app.studentName}</div>
+        <div>${app.jobTitle} — ${formatStars(app.jobStars)}</div>
+        <div class="text-muted">${formatDate(app.timestamp)}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" data-app-id="${app.id}" data-job-id="${app.jobId}" data-student-id="${app.studentId}" data-stars="${app.jobStars}">Mark Complete</button>
+    </div>
+  `).join("");
 
-  openModal({
-    title: `Mark Complete — ${jobTitle}`,
-    confirmLabel: `Award ${jobStars} ⭐`,
-    bodyHtml: `
-      <label class="form-label" for="complete-application-select">Student</label>
-      <select id="complete-application-select" class="form-input">
-        <option value="">Select a student…</option>
-        ${options}
-      </select>
-    `,
-    onConfirm: async (body) => {
-      const select = body.querySelector("#complete-application-select");
-      const applicationId = select.value;
-      if (!applicationId) throw new Error("Please select a student.");
-
-      const studentId = select.selectedOptions[0].dataset.studentId;
-
-      await completeJob(applicationId, jobId, studentId, jobStars, teacher.uid);
-      await loadJobs();
-    }
+  listEl.querySelectorAll("[data-app-id]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      btn.textContent = "Awarding…";
+      try {
+        await completeJob(
+          btn.dataset.appId,
+          btn.dataset.jobId,
+          btn.dataset.studentId,
+          Number(btn.dataset.stars),
+          teacher.uid
+        );
+        await loadPendingCompletions();
+        await loadJobs(); // spot count may free up visually elsewhere if needed
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = "Mark Complete";
+        alert(err.message || "Something went wrong.");
+      }
+    });
   });
 }
 
 loadJobs();
+loadPendingCompletions();

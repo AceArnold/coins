@@ -47,7 +47,6 @@ export async function addClass(name, teacherIds) {
   return ref.id;
 }
 
-/** Admin only — replace the full teacherIds array on an existing class */
 export async function updateClassTeachers(classId, teacherIds) {
   await updateDoc(doc(db, "classes", classId), { teacherIds });
 }
@@ -215,6 +214,11 @@ export async function getJobs() {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+export async function getJob(jobId) {
+  const snap = await getDoc(doc(db, "jobs", jobId));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
 export async function addJob(title, description, stars, spots, classId) {
   await addDoc(collection(db, "jobs"), {
     title,
@@ -257,6 +261,36 @@ export async function getJobApplications(jobId) {
   const q = query(collection(db, "jobApplications"), where("jobId", "==", jobId));
   const snap = await getDocs(q);
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+/**
+ * All job applications across every job that are signed up but not yet
+ * completed — enriched with student name, job title, and star reward.
+ * This is the "pending completion" list, mirroring the store's fulfillment tracker.
+ */
+export async function getPendingJobCompletions() {
+  const q = query(
+    collection(db, "jobApplications"),
+    where("status", "==", "signed_up"),
+    orderBy("timestamp", "asc")
+  );
+  const snap = await getDocs(q);
+  const applications = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const withDetails = await Promise.all(applications.map(async (app) => {
+    const [student, job] = await Promise.all([
+      getStudent(app.studentId),
+      getJob(app.jobId)
+    ]);
+    return {
+      ...app,
+      studentName: student ? student.name : "Unknown student",
+      jobTitle: job ? job.title : "Unknown job",
+      jobStars: job ? job.stars : 0
+    };
+  }));
+
+  return withDetails;
 }
 
 // ---------- DASHBOARD AGGREGATES ----------
