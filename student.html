@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student — Star Rewards</title>
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages/student.css" />
+</head>
+<body>
+
+  <div id="app-nav"></div>
+
+  <main class="page-container">
+    <div class="student-header">
+      <div>
+        <h1 id="student-header-name">Loading…</h1>
+      </div>
+      <div style="text-align: right;">
+        <div class="student-header-balance-label">Current Balance</div>
+        <div class="student-header-balance-value" id="student-header-balance">—</div>
+      </div>
+    </div>
+
+    <div class="student-action-row">
+      <button id="give-stars-btn" class="btn btn-give">⭐ Give Stars</button>
+      <button id="take-stars-btn" class="btn btn-take">✖ Take Stars</button>
+    </div>
+
+    <div class="card">
+      <h3>Transaction History</h3>
+      <div id="transaction-list" style="margin-top: var(--space-md);"></div>
+    </div>
+  </main>
+
+  <script type="module" src="js/pages/student.js"></script>
+
+</body>
+</html>

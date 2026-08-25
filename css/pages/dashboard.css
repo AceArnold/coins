@@ -1,0 +1,103 @@
+/* ============================================
+   Dashboard Page
+   ============================================ */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-lg);
+  margin-bottom: var(--space-xl);
+}
+
+@media (max-width: 900px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+.stat-card {
+  background-color: var(--color-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-lg);
+}
+
+.stat-card-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: var(--space-sm);
+}
+
+.stat-card-value {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.stat-card-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+.dashboard-columns {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-lg);
+}
+
+@media (max-width: 900px) {
+  .dashboard-columns { grid-template-columns: 1fr; }
+}
+
+.leaderboard-list {
+  list-style: none;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.leaderboard-item:last-child { border-bottom: none; }
+
+.leaderboard-rank {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  width: 24px;
+}
+
+.leaderboard-rank--top {
+  color: var(--color-star);
+}
+
+.leaderboard-name {
+  flex: 1;
+  font-weight: 600;
+}
+
+.activity-feed-item {
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+
+.activity-feed-item:last-child { border-bottom: none; }
+
+.activity-feed-time {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  display: block;
+  margin-top: 2px;
+}
+
+.badge-row {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}

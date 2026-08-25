@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Star Rewards</title>
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages/dashboard.css" />
+</head>
+<body>
+
+  <div id="app-nav"></div>
+
+  <main class="page-container">
+    <h1>Dashboard</h1>
+    <p class="text-muted" style="margin-bottom: var(--space-lg);">Here's what's happening across your classes.</p>
+
+    <div class="dashboard-grid">
+      <div class="stat-card" id="top-students-card"></div>
+      <div class="stat-card" id="best-class-card"></div>
+      <div class="stat-card">
+        <p class="stat-card-label">Quick Links</p>
+        <div class="badge-row" id="dashboard-badges"></div>
+      </div>
+    </div>
+
+    <div class="dashboard-columns">
+      <div class="card">
+        <h3>📈 Weekly Leaderboard</h3>
+        <ul class="leaderboard-list" id="weekly-leaderboard-list" style="margin-top: var(--space-md);"></ul>
+      </div>
+
+      <div class="card">
+        <h3>🕒 Recent Activity</h3>
+        <div id="activity-feed-list" style="margin-top: var(--space-md);"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/pages/dashboard.js"></script>
+
+</body>
+</html>

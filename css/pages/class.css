@@ -1,0 +1,43 @@
+/* ============================================
+   Classes & Class View Pages
+   ============================================ */
+
+.class-card {
+  display: block;
+  background-color: var(--color-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  transition: transform 0.1s ease;
+}
+
+.class-card:hover {
+  transform: translateX(2px);
+  background-color: var(--color-surface);
+}
+
+.class-card-name {
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.class-card-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.search-bar {
+  margin-bottom: var(--space-lg);
+}
+
+.class-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-md);
+}

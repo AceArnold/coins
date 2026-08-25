@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pending Approval — Star Rewards</title>
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+</head>
+<body class="login-body">
+
+  <main class="login-container">
+    <div class="login-card" style="text-align: center;">
+      <div class="login-brand">⭐ Star Rewards</div>
+      <h2 style="margin-top: var(--space-lg);">Account Pending Approval</h2>
+      <p class="text-muted" style="margin-top: var(--space-sm);">
+        Your account has been created and is waiting for admin approval.
+        You'll be able to log in once it's approved.
+      </p>
+      <button id="logout-btn" class="btn btn-secondary btn-full" style="margin-top: var(--space-xl);">
+        Log Out
+      </button>
+    </div>
+  </main>
+
+  <script type="module">
+    import { logoutTeacher } from "./js/auth.js";
+    document.getElementById("logout-btn").addEventListener("click", logoutTeacher);
+  </script>
+
+</body>
+</html>

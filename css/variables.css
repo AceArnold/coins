@@ -1,0 +1,56 @@
+/* ============================================
+   Star Rewards App — Design Tokens
+   ============================================ */
+
+:root {
+  /* Core palette */
+  --color-bg: #FBF3D5;              /* main background */
+  --color-surface: #D6DAC8;         /* cards, secondary surfaces */
+  --color-primary: #9CAFAA;         /* nav, primary buttons, headers */
+  --color-accent: #D6A99D;          /* accents, take-star buttons */
+
+  /* Text */
+  --color-text: #4A4238;            /* body text */
+  --color-text-muted: #7A7267;      /* secondary/labels */
+
+  /* Feedback colors */
+  --color-success: #22C55E;         /* points earned */
+  --color-danger: #EF4444;          /* points lost */
+  --color-star: #FFC93C;            /* star icon/value */
+  --color-warning: #E0B872;         /* out of stock / job full */
+  --color-error: #B33B3B;           /* hard errors */
+
+  /* Surfaces on top of surfaces */
+  --color-card: #FFFFFF;
+  --color-border: #C9C3AE;
+
+  /* Typography */
+  --font-display: 'Poppins', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.75rem;
+  --font-size-2xl: 2.25rem;
+
+  /* Spacing scale */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Radius & shadow */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --shadow-card: 0 2px 8px rgba(74, 66, 56, 0.08);
+  --shadow-modal: 0 8px 32px rgba(74, 66, 56, 0.25);
+
+  /* Layout */
+  --nav-height: 64px;
+  --max-width: 1100px;
+}
