@@ -29,9 +29,34 @@ export async function getTeacherClasses(teacherUid) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+export async function getAllClasses() {
+  const snap = await getDocs(collection(db, "classes"));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
 export async function getClass(classId) {
   const snap = await getDoc(doc(db, "classes", classId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function addClass(name, teacherIds) {
+  const ref = await addDoc(collection(db, "classes"), {
+    name,
+    teacherIds
+  });
+  return ref.id;
+}
+
+// ---------- TEACHERS ----------
+
+/** Admin only — get every approved teacher (for dropdowns) */
+export async function getApprovedTeachers() {
+  const q = query(
+    collection(db, "users"),
+    where("status", "==", "approved")
+  );
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
 // ---------- STUDENTS ----------
@@ -48,6 +73,15 @@ export async function getStudentsInClass(classId) {
 export async function getStudent(studentId) {
   const snap = await getDoc(doc(db, "students", studentId));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+export async function addStudent(name, classId) {
+  const ref = await addDoc(collection(db, "students"), {
+    name,
+    classId,
+    starBalance: 0
+  });
+  return ref.id;
 }
 
 // ---------- STAR TRANSACTIONS ----------

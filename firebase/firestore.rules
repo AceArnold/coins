@@ -3,59 +3,58 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: is the request from a logged-in teacher?
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Helper: is this teacher assigned to the given class?
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
     function isTeacherOfClass(classId) {
       return isSignedIn() &&
         request.auth.uid in get(/databases/$(database)/documents/classes/$(classId)).data.teacherIds;
     }
 
-    // ---------- users (teacher profiles) ----------
     match /users/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
 
-      // Allow self-signup, but force status to "pending" — can't self-approve
       allow create: if isSignedIn() && request.auth.uid == userId
                     && request.resource.data.status == "pending"
                     && request.resource.data.role == "teacher";
 
-      allow update, delete: if false; // only approvable via Firebase console (admin)
+      allow update, delete: if false;
     }
 
-    // ---------- classes ----------
     match /classes/{classId} {
-      allow read: if isSignedIn() && request.auth.uid in resource.data.teacherIds;
-      allow write: if false; // seeded/managed via backend only
-    }
-
-    // ---------- students ----------
-    match /students/{studentId} {
-      allow read: if isSignedIn(); // dashboard needs cross-class reads (top students, averages)
-      allow update: if isSignedIn() && isTeacherOfClass(resource.data.classId)
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['starBalance']);
-      allow create, delete: if false; // seeded/managed via backend only
-    }
-
-    // ---------- starTransactions ----------
-    match /starTransactions/{txnId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() && request.resource.data.teacherUid == request.auth.uid;
-      allow update, delete: if false; // immutable audit log — corrections done via backend
-    }
-
-    // ---------- rewards ----------
-    match /rewards/{rewardId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn(); // covers quantity/available changes on purchase
+      allow read: if isSignedIn() && (isAdmin() || request.auth.uid in resource.data.teacherIds);
+      allow create: if isAdmin();
+      allow update: if isAdmin();
       allow delete: if false;
     }
 
-    // ---------- purchases ----------
+    match /students/{studentId} {
+      allow read: if isSignedIn();
+      allow create: if isAdmin();
+      allow update: if isSignedIn() && (isAdmin() || isTeacherOfClass(resource.data.classId))
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['starBalance']);
+      allow delete: if false;
+    }
+
+    match /starTransactions/{txnId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.teacherUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /rewards/{rewardId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if false;
+    }
+
     match /purchases/{purchaseId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.teacherUid == request.auth.uid;
@@ -64,15 +63,13 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ---------- jobs ----------
     match /jobs/{jobId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn(); // covers filledSpots increment
+      allow update: if isSignedIn();
       allow delete: if false;
     }
 
-    // ---------- jobApplications ----------
     match /jobApplications/{applicationId} {
       allow read: if isSignedIn();
       allow create: if isSignedIn();

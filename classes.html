@@ -14,10 +14,18 @@
   <div id="app-nav"></div>
 
   <main class="page-container">
-    <h1>Your Classes</h1>
-    <p class="text-muted" style="margin-bottom: var(--space-lg);">Select a class to view its students.</p>
+    <div class="class-view-header">
+      <div>
+        <h1>Your Classes</h1>
+        <p class="text-muted">Select a class to view its students.</p>
+      </div>
+      <div id="admin-actions" class="admin-actions-row" hidden>
+        <button id="add-student-btn" class="btn btn-secondary btn-sm">+ Add Student</button>
+        <button id="add-class-btn" class="btn btn-primary btn-sm">+ Add Class</button>
+      </div>
+    </div>
 
-    <div id="classes-list"></div>
+    <div id="classes-list" style="margin-top: var(--space-lg);"></div>
   </main>
 
   <script type="module" src="js/pages/classes.js"></script>

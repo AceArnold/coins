@@ -41,3 +41,12 @@
   justify-content: space-between;
   margin-bottom: var(--space-md);
 }
+
+.admin-actions-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.admin-actions-row[hidden] {
+  display: none;
+}
