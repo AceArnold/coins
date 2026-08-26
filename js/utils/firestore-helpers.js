@@ -63,6 +63,12 @@ export async function getApprovedTeachers() {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
+/** Look up a single teacher's profile by UID (for displaying who did what) */
+export async function getTeacherProfile(uid) {
+  const snap = await getDoc(doc(db, "users", uid));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
 // ---------- STUDENTS ----------
 
 export async function getStudentsInClass(classId) {
@@ -388,6 +394,11 @@ export async function getWeeklyStarsLost(n = 10) {
   return list;
 }
 
+/**
+ * Most recent N transactions, enriched with both the STUDENT's name
+ * and the TEACHER's name who made the change (cached per-call to avoid
+ * duplicate lookups when the same teacher/student appears multiple times).
+ */
 export async function getRecentActivity(n = 8) {
   const q = query(
     collection(db, "starTransactions"),
@@ -397,9 +408,23 @@ export async function getRecentActivity(n = 8) {
   const snap = await getDocs(q);
   const txns = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
+  const studentCache = {};
+  const teacherCache = {};
+
   const withNames = await Promise.all(txns.map(async (txn) => {
-    const student = await getStudent(txn.studentId);
-    return { ...txn, studentName: student ? student.name : "Unknown student" };
+    if (!(txn.studentId in studentCache)) {
+      const student = await getStudent(txn.studentId);
+      studentCache[txn.studentId] = student ? student.name : "Unknown student";
+    }
+    if (!(txn.teacherUid in teacherCache)) {
+      const teacherProfile = await getTeacherProfile(txn.teacherUid);
+      teacherCache[txn.teacherUid] = teacherProfile ? (teacherProfile.name || teacherProfile.email) : "Unknown teacher";
+    }
+    return {
+      ...txn,
+      studentName: studentCache[txn.studentId],
+      teacherName: teacherCache[txn.teacherUid]
+    };
   }));
 
   return withNames;
@@ -417,11 +442,6 @@ export async function getPendingFulfillmentCount() {
 
 // ---------- CHART DATA ----------
 
-/**
- * For one class: every calendar day that had ANY star activity, with the
- * average net stars that day (total net stars that day ÷ number of
- * students currently in the class). Used by the "Daily Stars by Class" bar chart.
- */
 export async function getClassDailyAverages(classId) {
   const students = await getStudentsInClass(classId);
   if (students.length === 0) return { days: [], data: [] };
@@ -442,12 +462,6 @@ export async function getClassDailyAverages(classId) {
   return { days, data };
 }
 
-/**
- * For one class: every calendar day from that class's first-ever
- * transaction through today (filling 0 for inactive days), with each
- * student's own NET star change for that specific day (not cumulative).
- * Used by the "Individual Star Growth" line chart.
- */
 export async function getStudentDailySeries(classId) {
   const students = await getStudentsInClass(classId);
   if (students.length === 0) return { days: [], series: [] };

@@ -18,7 +18,7 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow read: if isSignedIn();
 
       allow create: if isSignedIn() && request.auth.uid == userId
                     && request.resource.data.status == "pending"

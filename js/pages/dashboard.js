@@ -17,7 +17,7 @@ import {
   getClassDailyAverages,
   getStudentDailySeries
 } from "../utils/firestore-helpers.js";
-import { formatStars, formatStarAmount, starAmountClass, timeAgo } from "../utils/format.js";
+import { formatStars, formatStarAmount, starAmountClass, timeAgo, formatDate } from "../utils/format.js";
 
 const teacher = await requireAuth();
 renderNav();
@@ -150,7 +150,9 @@ async function loadActivityFeed() {
         <strong>${txn.studentName}</strong>
         <span class="${starAmountClass(txn.amount)}">${formatStarAmount(txn.amount)}</span>
         — ${txn.category}
-        <span class="activity-feed-time">${timeAgo(txn.timestamp)}</span>
+        <span class="activity-feed-time">
+          ${formatDate(txn.timestamp)} · by ${txn.teacherName} · ${timeAgo(txn.timestamp)}
+        </span>
       </div>
     `).join("");
   } catch (err) {
