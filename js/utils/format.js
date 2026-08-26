@@ -4,7 +4,7 @@
 
 /** Formats a Firestore Timestamp (or Date) into a readable string */
 export function formatDate(timestamp) {
-  if (!timestamp) return "";
+  if (!timestamp) return "Just now";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
 
   return date.toLocaleDateString("en-US", {
@@ -18,7 +18,7 @@ export function formatDate(timestamp) {
 
 /** Formats a relative time like "2 min ago", "3 hours ago", "5 days ago" */
 export function timeAgo(timestamp) {
-  if (!timestamp) return "";
+  if (!timestamp) return "just now";
   const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
 

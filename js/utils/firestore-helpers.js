@@ -15,7 +15,8 @@ import {
   where,
   orderBy,
   limit,
-  Timestamp
+  Timestamp,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 // ---------- CLASSES ----------
@@ -91,6 +92,7 @@ export async function addStudent(name, classId) {
 
 export async function applyStarTransaction(studentId, amount, category, reason, teacherUid) {
   const studentRef = doc(db, "students", studentId);
+  const txnRef = doc(collection(db, "starTransactions"));
 
   await runTransaction(db, async (transaction) => {
     const studentSnap = await transaction.get(studentRef);
@@ -101,7 +103,6 @@ export async function applyStarTransaction(studentId, amount, category, reason, 
 
     transaction.update(studentRef, { starBalance: newBalance });
 
-    const txnRef = doc(collection(db, "starTransactions"));
     transaction.set(txnRef, {
       studentId,
       teacherUid,
@@ -109,7 +110,7 @@ export async function applyStarTransaction(studentId, amount, category, reason, 
       type: amount >= 0 ? "give" : "take",
       category,
       reason,
-      timestamp: Timestamp.now()
+      timestamp: serverTimestamp()
     });
   });
 }
@@ -158,6 +159,7 @@ export async function addReward(name, description, cost, quantity) {
 export async function purchaseReward(studentId, rewardId, teacherUid) {
   const studentRef = doc(db, "students", studentId);
   const rewardRef = doc(db, "rewards", rewardId);
+  const purchaseRef = doc(collection(db, "purchases"));
 
   await runTransaction(db, async (transaction) => {
     const studentSnap = await transaction.get(studentRef);
@@ -180,7 +182,6 @@ export async function purchaseReward(studentId, rewardId, teacherUid) {
       available: newQuantity > 0
     });
 
-    const purchaseRef = doc(collection(db, "purchases"));
     transaction.set(purchaseRef, {
       studentId,
       rewardId,
@@ -188,7 +189,7 @@ export async function purchaseReward(studentId, rewardId, teacherUid) {
       cost: reward.cost,
       teacherUid,
       fulfilled: false,
-      timestamp: Timestamp.now()
+      timestamp: serverTimestamp()
     });
   });
 }
@@ -232,6 +233,7 @@ export async function addJob(title, description, stars, spots, classId) {
 
 export async function signUpForJob(jobId, studentId) {
   const jobRef = doc(db, "jobs", jobId);
+  const appRef = doc(collection(db, "jobApplications"));
 
   await runTransaction(db, async (transaction) => {
     const jobSnap = await transaction.get(jobRef);
@@ -242,12 +244,11 @@ export async function signUpForJob(jobId, studentId) {
 
     transaction.update(jobRef, { filledSpots: job.filledSpots + 1 });
 
-    const appRef = doc(collection(db, "jobApplications"));
     transaction.set(appRef, {
       jobId,
       studentId,
       status: "signed_up",
-      timestamp: Timestamp.now()
+      timestamp: serverTimestamp()
     });
   });
 }
@@ -263,11 +264,6 @@ export async function getJobApplications(jobId) {
   return snap.docs.map(d => ({ id: d.id, ...d.data() }));
 }
 
-/**
- * All job applications across every job that are signed up but not yet
- * completed — enriched with student name, job title, and star reward.
- * This is the "pending completion" list, mirroring the store's fulfillment tracker.
- */
 export async function getPendingJobCompletions() {
   const q = query(
     collection(db, "jobApplications"),
@@ -359,6 +355,39 @@ export async function getWeeklyLeaderboard(n = 10) {
   return leaderboard;
 }
 
+export async function getWeeklyStarsLost(n = 10) {
+  const oneWeekAgo = Timestamp.fromDate(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000));
+
+  const q = query(
+    collection(db, "starTransactions"),
+    where("timestamp", ">=", oneWeekAgo),
+    where("amount", "<", 0)
+  );
+  const snap = await getDocs(q);
+  const txns = snap.docs.map(d => d.data());
+
+  const totals = {};
+  for (const txn of txns) {
+    totals[txn.studentId] = (totals[txn.studentId] || 0) + Math.abs(txn.amount);
+  }
+
+  const studentIds = Object.keys(totals);
+  const studentDataPromises = studentIds.map(id => getStudent(id));
+  const studentDocs = await Promise.all(studentDataPromises);
+
+  const list = studentDocs
+    .filter(Boolean)
+    .map(student => ({
+      studentId: student.id,
+      name: student.name,
+      starsLostThisWeek: totals[student.id]
+    }))
+    .sort((a, b) => b.starsLostThisWeek - a.starsLostThisWeek)
+    .slice(0, n);
+
+  return list;
+}
+
 export async function getRecentActivity(n = 8) {
   const q = query(
     collection(db, "starTransactions"),
@@ -384,4 +413,79 @@ export async function getOpenJobsCount() {
 export async function getPendingFulfillmentCount() {
   const purchases = await getUnfulfilledPurchases();
   return purchases.length;
+}
+
+// ---------- CHART DATA ----------
+
+/**
+ * For one class: every calendar day that had ANY star activity, with the
+ * average net stars that day (total net stars that day ÷ number of
+ * students currently in the class). Used by the "Daily Stars by Class" bar chart.
+ */
+export async function getClassDailyAverages(classId) {
+  const students = await getStudentsInClass(classId);
+  if (students.length === 0) return { days: [], data: [] };
+
+  const transactions = await getClassTransactions(classId);
+  if (transactions.length === 0) return { days: [], data: [] };
+
+  const byDate = {};
+  transactions.forEach(t => {
+    if (!t.timestamp) return;
+    const d = t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp);
+    const key = d.toISOString().slice(0, 10);
+    byDate[key] = (byDate[key] || 0) + t.amount;
+  });
+
+  const days = Object.keys(byDate).sort();
+  const data = days.map(day => byDate[day] / students.length);
+  return { days, data };
+}
+
+/**
+ * For one class: every calendar day from that class's first-ever
+ * transaction through today (filling 0 for inactive days), with each
+ * student's own NET star change for that specific day (not cumulative).
+ * Used by the "Individual Star Growth" line chart.
+ */
+export async function getStudentDailySeries(classId) {
+  const students = await getStudentsInClass(classId);
+  if (students.length === 0) return { days: [], series: [] };
+
+  const transactions = await getClassTransactions(classId);
+  if (transactions.length === 0) return { days: [], series: [] };
+
+  const dates = transactions
+    .filter(t => t.timestamp)
+    .map(t => (t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp)));
+
+  if (dates.length === 0) return { days: [], series: [] };
+
+  const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+  const today = new Date();
+
+  const days = [];
+  const cur = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  while (cur <= end) {
+    days.push(cur.toISOString().slice(0, 10));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  const byStudentDate = {};
+  transactions.forEach(t => {
+    if (!t.timestamp) return;
+    const d = t.timestamp.toDate ? t.timestamp.toDate() : new Date(t.timestamp);
+    const key = d.toISOString().slice(0, 10);
+    if (!byStudentDate[t.studentId]) byStudentDate[t.studentId] = {};
+    byStudentDate[t.studentId][key] = (byStudentDate[t.studentId][key] || 0) + t.amount;
+  });
+
+  const series = students.map(s => ({
+    studentId: s.id,
+    name: s.name,
+    data: days.map(day => (byStudentDate[s.id] && byStudentDate[s.id][day]) || 0)
+  }));
+
+  return { days, series };
 }

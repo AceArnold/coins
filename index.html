@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — Star Rewards</title>
-  <link rel="icon" type="image/png" href="./assets/images/logo.png">
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -38,8 +37,41 @@
         <div id="activity-feed-list" style="margin-top: var(--space-md);"></div>
       </div>
     </div>
+
+    <div class="dashboard-columns" style="margin-top: var(--space-lg);">
+      <div class="card">
+        <h3>📉 Stars Lost This Week</h3>
+        <ul class="leaderboard-list" id="weekly-stars-lost-list" style="margin-top: var(--space-md);"></ul>
+      </div>
+
+      <div class="card chart-card">
+        <h3>📅 Daily Stars by Class</h3>
+        <div class="chart-controls">
+          <select id="bar-class-select" class="form-input"></select>
+          <button id="bar-prev-btn" class="btn btn-secondary btn-sm">← Prev</button>
+          <button id="bar-next-btn" class="btn btn-secondary btn-sm">Next →</button>
+          <button id="bar-showall-btn" class="btn btn-secondary btn-sm">Show Full History</button>
+        </div>
+        <p class="empty-state" id="bar-chart-empty" hidden>No star activity yet.</p>
+        <div class="chart-scroll-wrapper" id="bar-chart-wrapper">
+          <canvas id="bar-chart-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card chart-card" style="margin-top: var(--space-lg);">
+      <h3>📈 Individual Star Growth</h3>
+      <div class="chart-controls">
+        <select id="line-class-select" class="form-input"></select>
+      </div>
+      <p class="empty-state" id="line-chart-empty" hidden>No star activity yet.</p>
+      <div class="chart-scroll-wrapper" id="line-chart-wrapper">
+        <canvas id="line-chart-canvas"></canvas>
+      </div>
+    </div>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js" defer></script>
   <script type="module" src="js/pages/dashboard.js"></script>
 
 </body>
