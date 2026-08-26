@@ -102,6 +102,19 @@
   margin-top: var(--space-md);
 }
 
+/* ---------- Best Class Average widget ---------- */
+
+.best-class-card {
+  text-align: center;
+}
+
+.best-class-average-value {
+  font-family: var(--font-display);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-star);
+}
+
 /* ---------- Charts ---------- */
 
 .chart-card {

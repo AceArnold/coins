@@ -77,6 +77,7 @@ async function loadTopStudents() {
 
 async function loadBestClass() {
   const el = document.getElementById("best-class-card");
+  el.classList.add("best-class-card");
   try {
     const classAverages = await getClassAverages();
     if (classAverages.length === 0) {
@@ -87,7 +88,7 @@ async function loadBestClass() {
     el.innerHTML = `
       <p class="stat-card-label">📊 Best Class Average</p>
       <p class="stat-card-value">${best.className}</p>
-      <p class="stat-card-sub">${best.average.toFixed(1)} ⭐ avg per student</p>
+      <p class="best-class-average-value">${best.average.toFixed(1)} ⭐ </p>
     `;
   } catch (err) {
     console.error("Class averages failed:", err);
